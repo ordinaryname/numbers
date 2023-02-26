@@ -8,7 +8,13 @@ class Number:
         # self._initial is the first number in the array
         self._initial = initial
         # self._growth_rate defines the difference between 2 adjacent numbers in the array
-        self._growth_rate = growth_rate
+        if(isinstance(growth_rate, Number)):
+            if(growth_rate.get_numberOfSteps() == number_of_steps - 1):
+                self._growth_rate = growth_rate
+            else:
+                raise ValueError()
+        else:
+            self._growth_rate = growth_rate
         # self._number_of_steps defines the amount of numbers in the array
         self._number_of_steps = int(number_of_steps)
         # self._operation defines the algebraic operation needed to define self._value
@@ -19,14 +25,26 @@ class Number:
         # They are updated by the 'evaluate' function
         self._value = None
         self._array = None
+        self._value_array = None
 
         # Helps keep the values defined above updated before each use
         self._reevaluate = True
 
     def evaluate(self):
         if(self._reevaluate):
+            if(self._number_of_steps <= 0):
+                self._initial = 0
+                self._growth_rate = 0
+                self._number_of_steps = 0
+                self._value = 0
+                self._array = np.full(0, 0)
+                self._value_array = np.full(0, 0)
+                self._reevaluate = False
+                return
             if(self.get_growthRate() == 0):
                 self._array = np.full(self.get_numberOfSteps(), self.get_initial())
+            elif(isinstance(self.get_growthRate(), Number)):
+                self._array = np.full(self.get_numberOfSteps(), self.get_initial()) + np.insert(self.get_growthRate().get_valueArray(), 0, 0, axis=0)
             else:
                 last_array_element = self.get_growthRate() * (self.get_numberOfSteps() - 1) + self.get_initial()
                 # absolute_distance: i.e. absDis(-1, -5) = 4, absDis(2, -5) = 3, absDis(6, 1) = 5
@@ -38,7 +56,8 @@ class Number:
                 # stop) = num WHERE num BETWEEN last_array_element AND (last_array_element + self._growth_rate)
                 # step = self._growth_rate
                 self._array = np.arange(self.get_initial(), last_array_element + (absolute_distance * direction), self.get_growthRate())
-            self._value = np.sum(self._array)
+            self._value_array = np.cumsum(self._array)
+            self._value = self._value_array[-1]
             self._reevaluate = False
 
     # Overide methods
@@ -88,3 +107,8 @@ class Number:
         if(self._reevaluate):
             self.evaluate()
         return self._array
+
+    def get_valueArray(self):
+        if(self._reevaluate):
+            self.evaluate()
+        return self._value_array
